@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { runAuditStream, testConnection } from './services/geminiService';
 import { UploadedFile, AuditStatus } from './types';
@@ -41,92 +40,95 @@ interface VisualTheme {
   watermark: string; // Default watermark for this theme
 }
 
-// 羊皮紙背景色調庫
+// 羊皮紙背景色調庫 (Random Parchment Backgrounds)
 const PARCHMENT_TONES = [
-  'bg-[#fff]',        // 純淨白
-  'bg-[#fdf6e3]',    // 泛黃羊皮
-  'bg-[#f5f5f5]',    // 冷調灰白
-  'bg-[#FFFef0]'     // 經典象牙
+  'bg-[#fff]',         // 純淨白 (Plain)
+  'bg-[#fdf6e3]',     // 泛黃羊皮 (Old Parchment)
+  'bg-[#f4f1ea]',     // 亞麻色 (Linen)
+  'bg-[#FFFef0]',     // 經典象牙 (Ivory)
+  'bg-[#faf0e6]',     // 亞麻布 (Linen)
+  'bg-[#fffaf0]'      // 花卉白 (Floral)
 ];
 
 const IDLE_THEMES: VisualTheme[] = [
   {
     id: 'grimoire',
     icon: 'fas fa-book-journal-whills',
-    subIcon: '🔥', 
+    subIcon: '✨', 
     color: 'text-ghibli-wood',
     glowColor: 'orange',
     animation: 'animate-float',
-    title: "古老法典",
+    title: "古老法典 (The Grimoire)",
     subtitle: "等待素材注入...",
     watermark: "SAPIENTIA (智慧)"
   },
   {
     id: 'torch',
-    icon: 'fas fa-fire-alt', // Changed to fire-alt for more "torch" feel
-    subIcon: '✨',
-    color: 'text-amber-700',
-    glowColor: 'gold',
+    icon: 'fas fa-fire-alt',
+    subIcon: '🔥',
+    color: 'text-amber-600',
+    glowColor: '#f59e0b',
     animation: 'animate-pulse',
-    title: "真理火炬",
-    subtitle: "照亮你的文案盲點...",
-    watermark: "VERITAS (真理)"
+    title: "永恆火炬 (The Torch)",
+    subtitle: "照亮行銷盲區...",
+    watermark: "LUX (光)"
   },
   {
-    id: 'offering',
-    icon: 'fas fa-hands', 
+    id: 'cauldron',
+    icon: 'fas fa-mortar-pestle', 
+    subIcon: '🫧',
     color: 'text-stone-600',
-    glowColor: 'white',
-    animation: 'animate-float',
-    title: "虔誠獻計",
-    subtitle: "雙手奉上，等待回應...",
-    watermark: "TABULA RASA"
+    glowColor: '#84cc16', 
+    animation: 'animate-bounce-slow',
+    title: "煉金大釜 (The Cauldron)",
+    subtitle: "熬煮爆款文案...",
+    watermark: "ALCHEMY (鍊金)"
   },
   {
     id: 'crystal',
-    icon: 'fas fa-eye', // Mystical eye / Orb
+    icon: 'fas fa-circle-notch', 
     subIcon: '🔮',
-    color: 'text-purple-900',
-    glowColor: 'purple',
-    animation: 'animate-pulse',
-    title: "全知之眼",
-    subtitle: "讓未來的轉換率顯現...",
-    watermark: "PROVIDENTIA (預見)"
+    color: 'text-purple-800',
+    glowColor: '#a855f7',
+    animation: 'animate-spin-slow',
+    title: "預言水晶 (The Orb)",
+    subtitle: "洞悉流量未來...",
+    watermark: "VERITAS (真理)"
   },
   {
     id: 'bonfire',
-    icon: 'fas fa-burn', 
+    icon: 'fas fa-campground', 
     subIcon: '🪵',
-    color: 'text-red-900',
-    glowColor: 'red',
+    color: 'text-red-700',
+    glowColor: '#ef4444',
     animation: 'animate-flicker',
-    title: "獻祭營火",
-    subtitle: "燒盡平庸，浴火重生...",
-    watermark: "SACRIFICIUM (獻祭)"
+    title: "獻祭火堆 (The Bonfire)",
+    subtitle: "燃燒預算，浴火重生...",
+    watermark: "IGNIS (火)"
   }
 ];
 
 const BUTTON_TEXTS = [
-  "🔥 啟動鍊金術式",
-  "🩸 獻祭此素材",
-  "⚡ 召喚深淵回響",
-  "🔮 進行靈魂投影",
-  "👹 請求總監賜教",
-  "⚖️ 開啟真理之門",
-  "🌪️ 釋放混沌風暴",
-  "🦴 投入營火"
+  "🔥 燃燒預算 (Ignite)",
+  "🩸 3秒生死判決 (Judge)",
+  "⚡ 開始煉金 (Alchemy)",
+  "🔮 靈魂投影 (Project)",
+  "👹 召喚總監 (Summon)",
+  "⚖️ 真理審判 (Trial)",
+  "🌪️ 釋放混沌 (Chaos)",
+  "🦴 獻祭素材 (Sacrifice)"
 ];
 
-// 額外的隨機浮水印 (與主題浮水印混合使用)
+// 額外的隨機浮水印
 const EXTRA_WATERMARKS = [
   "CREATIO (創造)",
   "AVARITIA (貪婪)",
   "EQUIVALENT EXCHANGE",
   "THE VOID STARES BACK",
-  "ALCHEMY (鍊金術)",
   "MAGNUM OPUS (傑作)",
   "TRANSFORMATION",
-  "ABYSSUS (深淵)"
+  "ABYSSUS (深淵)",
+  "TABULA RASA (白板)"
 ];
 
 // 隨機選取工具
@@ -146,7 +148,7 @@ const MessageModal: React.FC<{
       <div className={`bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl border-4 ${type === 'error' ? 'border-red-400' : 'border-ghibli-wood'} text-center transform scale-100 transition-transform`}>
         <div className="text-4xl mb-4 animate-bounce">{icon}</div>
         <h3 className="text-xl font-black text-ghibli-wood mb-2">{title}</h3>
-        <p className="text-gray-600 mb-6 whitespace-pre-wrap">{message}</p>
+        <p className="text-gray-600 mb-6 whitespace-pre-wrap text-sm leading-relaxed">{message}</p>
         <button onClick={onClose} className="btn-magic px-6 py-2 w-full">知道了</button>
       </div>
     </div>
@@ -558,6 +560,13 @@ const App: React.FC = () => {
         .animate-bounce-slow {
           animation: bounce-slow 3s infinite;
         }
+        @keyframes spin-slow {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        .animate-spin-slow {
+          animation: spin-slow 12s linear infinite;
+        }
       `}</style>
       
       {/* Header */}
@@ -577,7 +586,7 @@ const App: React.FC = () => {
           <div className="flex flex-col justify-center">
             <h1 className="text-2xl md:text-4xl font-black text-ghibli-wood tracking-wide drop-shadow-sm leading-tight">Rich Bear</h1>
             <div className="flex items-center gap-2 md:gap-3 text-ghibli-wood/80 font-bold mt-1">
-               <span className="text-sm md:text-lg">審核之森</span>
+               <span className="text-sm md:text-lg">審核之森 | V18</span>
                <div className="h-1 w-1 rounded-full bg-ghibli-wood/40"></div>
                <span onClick={() => setAdminOpen(true)} className="bg-white/60 px-2 md:px-3 py-0.5 rounded-full border border-ghibli-wood/20 text-xs text-ghibli-wood/60 cursor-pointer hover:bg-white hover:text-ghibli-accent transition-colors flex items-center gap-1">
                 <i className="fas fa-server"></i> {currentModelId}
