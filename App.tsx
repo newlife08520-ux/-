@@ -4,70 +4,121 @@ import { runAuditStream, testConnection } from './services/geminiService';
 import { UploadedFile, AuditStatus } from './types';
 import { DEFAULT_SYSTEM_PROMPT, TARGET_MODEL_ID, DEFAULT_LOGO_URL, HARDCODED_API_KEY, AVAILABLE_MODELS } from './constants';
 
-// --- 隨機文案庫 (Flavor Text) ---
+// --- 神秘學文案庫 (Arcane Flavor Text) ---
 const LOADING_TITLES = [
-  "🔥 召喚地獄總監中...", 
-  "👹 總監正在磨刀...", 
-  "⚡ 正在以此素材獻祭...", 
-  "🌪️ 捲起爆款風暴...", 
-  "🔮 讀取商業靈魂...",
-  "👁️ 開啟商業鷹眼...",
-  "⚖️ 審判天秤傾斜中...",
-  "🩸 正在執行殘酷處刑...",
-  "🐉 燃燒經費的儀式..."
+  "🔥 正在進行等價交換...", 
+  "🔮 讀取阿卡西記錄...", 
+  "👁️ 深淵正在回望...", 
+  "⚡ 注入靈魂碎片...", 
+  "🩸 簽訂契約中...",
+  "⚖️ 審判天秤傾斜...",
+  "🌑 召喚黑暗中的微光...",
+  "👹 地獄總監降臨...",
+  "🐉 龍焰鍛造文案..."
 ];
 
 const LOADING_SUBTITLES = [
-  "正在注入高轉化率魔法...", 
-  "這文案太平淡了，正在加辣...", 
-  "千萬別眨眼，奇蹟即將發生...", 
-  "準備接受來自地獄的審判...", 
-  "正在萃取商業價值...",
-  "分析這支影片的爆款基因...",
-  "如果這是一坨屎，總監會告訴你...",
-  "正在把你的預算變成業績...",
-  "施展鍊金術：點石成金中..."
+  "將平庸轉化為黃金的過程...", 
+  "正在解析這份素材的真名...", 
+  "千萬別移開視線，儀式已開始...", 
+  "正在萃取人類的渴望與貪婪...", 
+  "這不僅是運算，這是降靈...",
+  "正在編織無法拒絕的誘惑...",
+  "犧牲部分理性，換取極致感性...",
+  "正在為了轉換率獻祭..."
 ];
 
-const IDLE_TITLES = [
-  "魔法書準備就緒",
-  "召喚陣繪製完成",
-  "祭壇已清理乾淨",
-  "等待獻祭素材",
-  "總監正在喝咖啡"
-];
+// --- 隨機祭壇視覺系統 (Altar Visual System) ---
+interface VisualTheme {
+  id: string;
+  icon: string; // FontAwesome class
+  subIcon?: string; // Optional secondary element
+  color: string;
+  glowColor: string;
+  animation: string;
+  title: string;
+  subtitle: string;
+}
 
-const IDLE_SUBTITLES = [
-  "等待素材注入...",
-  "請放上您的供品 (圖片/影片)",
-  "總監今天心情不錯，快點...",
-  "準備好接受爆擊了嗎？",
-  "別讓總監等太久..."
+const IDLE_THEMES: VisualTheme[] = [
+  {
+    id: 'grimoire',
+    icon: 'fas fa-book-journal-whills',
+    subIcon: '🔥', 
+    color: 'text-ghibli-wood',
+    glowColor: 'orange',
+    animation: 'animate-float',
+    title: "魔法書準備就緒",
+    subtitle: "等待素材注入..."
+  },
+  {
+    id: 'torch',
+    icon: 'fas fa-dungeon', // Using dungeon gate/torch metaphor
+    subIcon: '✨',
+    color: 'text-amber-700',
+    glowColor: 'gold',
+    animation: 'animate-pulse',
+    title: "真理火炬已點燃",
+    subtitle: "照亮你的文案盲點..."
+  },
+  {
+    id: 'cauldron',
+    icon: 'fas fa-flask', 
+    subIcon: '🫧',
+    color: 'text-emerald-800',
+    glowColor: 'green',
+    animation: 'animate-bounce-slow',
+    title: "煉金大釜沸騰中",
+    subtitle: "丟入素材，提煉爆款精華..."
+  },
+  {
+    id: 'crystal',
+    icon: 'fas fa-globe-europe', // Looks like a crystal ball
+    subIcon: '🔮',
+    color: 'text-purple-800',
+    glowColor: 'purple',
+    animation: 'animate-pulse',
+    title: "全知水晶球",
+    subtitle: "讓未來的轉換率顯現..."
+  },
+  {
+    id: 'bonfire',
+    icon: 'fas fa-campground', 
+    subIcon: '🦴',
+    color: 'text-red-900',
+    glowColor: 'red',
+    animation: 'animate-flicker',
+    title: "獻祭營火",
+    subtitle: "只有燒盡平庸，才能重生..."
+  }
 ];
 
 const BUTTON_TEXTS = [
-  "🔥 3秒生死判決",
-  "⚡ 召喚毒舌總監",
-  "🩸 開始殘酷審判",
-  "🔮 預測爆款機率",
-  "👹 獻祭素材換業績",
-  "🌪️ 讓暴風雨來得更猛烈",
-  "⚖️ 進行靈魂拷問"
+  "🔥 啟動鍊金術式",
+  "🩸 獻祭此素材",
+  "⚡ 召喚深淵回響",
+  "🔮 進行靈魂投影",
+  "👹 請求總監賜教",
+  "⚖️ 開啟真理之門",
+  "🌪️ 釋放混沌風暴"
 ];
 
+// 比較嚴肅、氛圍感的浮水印 (拉丁文/英文概念)
 const WATERMARK_TEXTS = [
-  "平庸 是最大的罪惡",
-  "你的廣告 夠暴力嗎？",
-  "Rich Bear 正在看著你",
-  "文案要有 錢 的味道",
-  "不做爆款 就做垃圾",
-  "點擊率 說明一切",
-  "沒有藉口 只有結果",
-  "用 美感 征服世界"
+  "VERITAS (真理)",
+  "CREATIO (創造)",
+  "AVARITIA (貪婪)",
+  "EQUIVALENT EXCHANGE",
+  "THE VOID STARES BACK",
+  "ALCHEMY (鍊金術)",
+  "MAGNUM OPUS (傑作)",
+  "TRANSFORMATION",
+  "SACRIFICE (獻祭)",
+  "ABYSSUS (深淵)"
 ];
 
 // 隨機選取工具
-const getRandomFlavor = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
+const getRandomFlavor = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
 
 const MessageModal: React.FC<{
   isOpen: boolean;
@@ -264,7 +315,7 @@ const MagicCardsDisplay: React.FC<{ markdown: string }> = ({ markdown }) => {
   if (sections.length === 0 && markdown.length > 0) {
       return (
         <div className="magic-card animate-pulse">
-            <h2><i className="fas fa-pen-nib animate-bounce"></i> 總監思考中...</h2>
+            <h2><i className="fas fa-pen-nib animate-bounce"></i> 儀式進行中...</h2>
             <div className="whitespace-pre-wrap text-ghibli-wood/80">{markdown}</div>
         </div>
       );
@@ -274,7 +325,7 @@ const MagicCardsDisplay: React.FC<{ markdown: string }> = ({ markdown }) => {
     <div className="space-y-6">
       {sections.map((section, idx) => {
         const titleMatch = section.match(/^##\s+(.+)$/m);
-        const title = titleMatch ? titleMatch[1] : '分析報告';
+        const title = titleMatch ? titleMatch[1] : '審判結果';
         let content = section.replace(/^##\s+.+$/m, '').trim();
         
         content = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
@@ -319,7 +370,7 @@ const App: React.FC = () => {
 
   // 隨機文案與視覺狀態
   const [loadingFlavor, setLoadingFlavor] = useState({ title: LOADING_TITLES[0], subtitle: LOADING_SUBTITLES[0] });
-  const [idleFlavor, setIdleFlavor] = useState({ title: IDLE_TITLES[0], subtitle: IDLE_SUBTITLES[0] });
+  const [idleTheme, setIdleTheme] = useState<VisualTheme>(IDLE_THEMES[0]);
   const [buttonText, setButtonText] = useState(BUTTON_TEXTS[0]);
   const [watermarkText, setWatermarkText] = useState(WATERMARK_TEXTS[0]);
 
@@ -336,10 +387,8 @@ const App: React.FC = () => {
 
   // 初始化與重置時，刷新隨機元素
   const refreshRandomElements = () => {
-    setIdleFlavor({
-      title: getRandomFlavor(IDLE_TITLES),
-      subtitle: getRandomFlavor(IDLE_SUBTITLES)
-    });
+    // 隨機選擇一個主題
+    setIdleTheme(getRandomFlavor(IDLE_THEMES));
     setButtonText(getRandomFlavor(BUTTON_TEXTS));
     setWatermarkText(getRandomFlavor(WATERMARK_TEXTS));
   };
@@ -385,7 +434,7 @@ const App: React.FC = () => {
     if (!selectedFile) return;
 
     if (selectedFile.size > 200 * 1024 * 1024) {
-      setMsgModal({ isOpen: true, title: '檔案太重了', message: '請上傳小於 200MB 的檔案。', icon: '🍃', type: 'error' });
+      setMsgModal({ isOpen: true, title: '素材過重', message: '請上傳小於 200MB 的檔案。', icon: '🍃', type: 'error' });
       return;
     }
 
@@ -397,11 +446,12 @@ const App: React.FC = () => {
         data: base64Raw.split(',')[1],
         name: selectedFile.name
       });
-      // 上傳檔案時，也切換一次 Idle 文案，增加趣味性
-      setIdleFlavor({
-          title: "供品已確認",
-          subtitle: "看起來... 很有潛力 (或槽點)"
-      });
+      // 上傳檔案時，微調一下主題文字增加互動感
+      setIdleTheme(prev => ({
+          ...prev,
+          title: "供品已放置",
+          subtitle: "靈魂成色不錯，準備獻祭..."
+      }));
     };
     reader.readAsDataURL(selectedFile);
   };
@@ -409,17 +459,18 @@ const App: React.FC = () => {
   const clearFile = () => {
     setFile(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
+    // 恢復隨機主題
     refreshRandomElements();
   };
 
   const handleAudit = async () => {
     if (connStatus === 'error') {
-       setMsgModal({ isOpen: true, title: '連線異常', message: `API 連線失敗，請檢查金鑰。\n原因：${connMsg}`, icon: '🚫', type: 'error' });
+       setMsgModal({ isOpen: true, title: '連線中斷', message: `API 連線失敗，請檢查契約(Key)。\n原因：${connMsg}`, icon: '🚫', type: 'error' });
        return;
     }
 
     if (!file && !inputText.trim()) {
-      setMsgModal({ isOpen: true, title: '魔法書是空的', message: '請至少「上傳一個檔案」或「輸入一段咒語」。', icon: '📖', type: 'info' });
+      setMsgModal({ isOpen: true, title: '祭壇空無一物', message: '請至少「上傳一個檔案」或「輸入一段咒語」。', icon: '📖', type: 'info' });
       return;
     }
 
@@ -448,13 +499,44 @@ const App: React.FC = () => {
       setStatus('success');
 
     } catch (error: any) {
-      setMsgModal({ isOpen: true, title: '召喚失敗', message: error.message || 'Unknown error', icon: '🔥', type: 'error' });
+      setMsgModal({ isOpen: true, title: '召喚反噬', message: error.message || 'Unknown error', icon: '🔥', type: 'error' });
       setStatus('error');
     }
   };
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
+      <style>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-15px); }
+        }
+        .animate-float {
+          animation: float 4s ease-in-out infinite;
+        }
+        @keyframes rotate-slow {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        .animate-rotate-slow {
+          animation: rotate-slow 10s linear infinite;
+        }
+        @keyframes flicker {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.8; transform: scale(0.95); }
+        }
+        .animate-flicker {
+          animation: flicker 2s infinite;
+        }
+        @keyframes bounce-slow {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
+        }
+        .animate-bounce-slow {
+          animation: bounce-slow 3s infinite;
+        }
+      `}</style>
+      
       {/* Header */}
       <header className="h-auto min-h-[80px] md:h-28 px-4 md:px-8 py-4 md:py-0 flex flex-wrap md:flex-nowrap items-center justify-between z-10 shrink-0 bg-transparent gap-4">
         <div className="flex items-center gap-4 md:gap-6">
@@ -546,7 +628,7 @@ const App: React.FC = () => {
 
             <div className="flex-1 flex flex-col relative z-20 min-h-[120px]">
               <label className="block text-sm font-black text-ghibli-wood mb-2 ml-1">
-                <i className="fas fa-feather-alt mr-2 text-ghibli-accent"></i> 補充資訊
+                <i className="fas fa-feather-alt mr-2 text-ghibli-accent"></i> 補充咒語
               </label>
               <textarea 
                 value={inputText}
@@ -580,10 +662,10 @@ const App: React.FC = () => {
         <div className="w-full lg:w-2/3 flex-none lg:flex-1 flex flex-col animate-fade-in-up lg:h-full shrink-0 min-h-[60vh] pb-8 lg:pb-0" style={{ animationDelay: '0.1s' }} id="result-area">
           <div className="ghibli-panel p-1 flex-1 flex flex-col relative bg-[#fff] h-full overflow-hidden">
             
-            {/* 趣味背景浮水印 (只有在待機或非 Loading 狀態明顯一點) */}
+            {/* 氛圍背景浮水印 (隨機拉丁文/神秘概念) */}
             {status === 'idle' && (
-              <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none select-none overflow-hidden z-0">
-                  <div className="transform -rotate-12 text-6xl md:text-8xl font-black text-ghibli-wood whitespace-nowrap animate-pulse">
+              <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none select-none overflow-hidden z-0 animate-pulse" style={{animationDuration: '8s'}}>
+                  <div className="transform -rotate-12 text-6xl md:text-9xl font-black text-ghibli-wood whitespace-nowrap tracking-widest font-serif">
                     {watermarkText}
                   </div>
               </div>
@@ -593,33 +675,44 @@ const App: React.FC = () => {
             <div className="flex-1 overflow-y-auto p-6 md:p-10 relative z-10 scroll-smooth">
               
               {status === 'idle' && (
-                 <div className="flex flex-col items-center justify-center h-full text-ghibli-wood/40 py-20 lg:py-0">
-                  <div className="relative mb-6 group cursor-default">
-                    <div className="w-32 h-32 md:w-40 md:h-40 bg-ghibli-bg rounded-full flex items-center justify-center border-4 border-dashed border-ghibli-wood/20 animate-pulse group-hover:border-ghibli-accent/50 transition-colors">
-                        <i className="fas fa-book-sparkles text-5xl md:text-6xl text-ghibli-wood/30 group-hover:text-ghibli-accent/50 transition-colors"></i>
+                 <div className="flex flex-col items-center justify-center h-full text-ghibli-wood/60 py-20 lg:py-0">
+                  
+                  {/* 動態隨機祭壇 (Dynamic Random Altar) */}
+                  <div className="relative mb-8 group cursor-default">
+                    {/* 隨機動態圖示 */}
+                    <div className={`w-32 h-32 md:w-40 md:h-40 flex items-center justify-center ${idleTheme.animation}`} style={{animationDelay: '1s'}}>
+                        <i className={`${idleTheme.icon} text-6xl md:text-8xl ${idleTheme.color} drop-shadow-2xl`}></i>
                     </div>
-                     {file && <div className="absolute -top-2 -right-2 text-4xl animate-bounce drop-shadow-md">🔥</div>}
+                    
+                    {/* 隨機副元素 (如果有) */}
+                    {idleTheme.subIcon && (
+                        <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 animate-float z-20">
+                             <div className="text-4xl drop-shadow-[0_0_15px_rgba(255,255,255,0.8)] filter blur-[0.5px]">{idleTheme.subIcon}</div>
+                        </div>
+                    )}
+                    
+                    {/* 底部發光陰影 (隨主題變色) */}
+                    <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-24 h-4 bg-black/10 rounded-[50%] blur-sm animate-pulse" 
+                         style={{ boxShadow: `0 -10px 30px ${idleTheme.glowColor}` }}></div>
                   </div>
                   
-                  <h3 className="text-xl md:text-2xl font-black mb-3 text-ghibli-wood">{idleFlavor.title}</h3>
-                  <p className="text-base md:text-lg font-medium">{idleFlavor.subtitle}</p>
+                  <h3 className="text-xl md:text-2xl font-black mb-3 text-ghibli-wood tracking-widest">{idleTheme.title}</h3>
+                  <p className="text-base md:text-lg font-medium font-serif italic opacity-80">{idleTheme.subtitle}</p>
                 </div>
               )}
 
               {status === 'loading' && (
                 <div className="flex flex-col items-center justify-center h-full space-y-6 py-20 lg:py-0">
-                   <div className="relative">
+                   <div className="relative w-64 h-64 flex items-center justify-center">
+                      {/* 旋轉魔法陣 (外圈) */}
+                      <div className="absolute inset-0 border-4 border-dashed border-red-800/20 rounded-full animate-rotate-slow"></div>
+                      <div className="absolute inset-4 border-2 border-red-800/30 rounded-full animate-rotate-slow" style={{animationDirection: 'reverse'}}></div>
+                      
                       {/* 地獄總監圖示 */}
                       <div className="text-7xl md:text-9xl animate-bounce z-10 relative drop-shadow-[0_10px_10px_rgba(220,38,38,0.5)]">👹</div>
-                      {/* 背後火焰特效 */}
-                      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-gradient-to-r from-orange-500 to-red-600 rounded-full blur-2xl animate-pulse opacity-60"></div>
-                      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-56 h-56 bg-red-500/20 rounded-full blur-3xl animate-ping"></div>
                       
-                      <div className="absolute -bottom-6 left-0 right-0 flex justify-center gap-2 text-3xl">
-                         <span className="animate-bounce" style={{animationDelay: '0s'}}>🔥</span>
-                         <span className="animate-bounce" style={{animationDelay: '0.1s'}}>🔥</span>
-                         <span className="animate-bounce" style={{animationDelay: '0.2s'}}>🔥</span>
-                      </div>
+                      {/* 能量特效 */}
+                      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-gradient-to-r from-orange-500 to-red-600 rounded-full blur-2xl animate-pulse opacity-60"></div>
                    </div>
                   <div className="text-center max-w-md mx-auto z-20">
                     <p className="text-ghibli-wood font-black text-2xl md:text-3xl mb-3 animate-pulse drop-shadow-sm">{loadingFlavor.title}</p>
@@ -634,10 +727,10 @@ const App: React.FC = () => {
               
               {status === 'error' && (
                  <div className="p-6 border-4 border-red-200 rounded-3xl bg-red-50 text-red-800 text-center animate-fade-in-up mt-10 lg:mt-0">
-                    <i className="fas fa-bomb text-5xl mb-4 text-red-500"></i>
-                    <h3 className="font-black text-xl mb-2">召喚失敗</h3>
-                    <p className="mb-4 font-bold text-lg">請檢查 API Key 或網路狀態</p>
-                    <button onClick={() => setStatus('idle')} className="mt-4 px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-bold shadow-lg">重置儀式</button>
+                    <i className="fas fa-skull-crossbones text-5xl mb-4 text-red-500"></i>
+                    <h3 className="font-black text-xl mb-2">儀式被打斷</h3>
+                    <p className="mb-4 font-bold text-lg">請檢查 API 契約 (Key) 或 魔網連線</p>
+                    <button onClick={() => setStatus('idle')} className="mt-4 px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-bold shadow-lg">重新佈陣</button>
                 </div>
               )}
 
