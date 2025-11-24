@@ -8,7 +8,7 @@ export interface AuditResult {
   rawMarkdown: string;
 }
 
-export type AuditStatus = 'idle' | 'loading' | 'success' | 'error';
+export type AuditStatus = 'idle' | 'loading' | 'streaming' | 'success' | 'error';
 
 export interface AdminSettings {
   systemPrompt: string;
