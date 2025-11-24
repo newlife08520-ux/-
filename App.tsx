@@ -38,7 +38,16 @@ interface VisualTheme {
   animation: string;
   title: string;
   subtitle: string;
+  watermark: string; // Default watermark for this theme
 }
+
+// 羊皮紙背景色調庫
+const PARCHMENT_TONES = [
+  'bg-[#fff]',        // 純淨白
+  'bg-[#fdf6e3]',    // 泛黃羊皮
+  'bg-[#f5f5f5]',    // 冷調灰白
+  'bg-[#FFFef0]'     // 經典象牙
+];
 
 const IDLE_THEMES: VisualTheme[] = [
   {
@@ -48,48 +57,52 @@ const IDLE_THEMES: VisualTheme[] = [
     color: 'text-ghibli-wood',
     glowColor: 'orange',
     animation: 'animate-float',
-    title: "魔法書準備就緒",
-    subtitle: "等待素材注入..."
+    title: "古老法典",
+    subtitle: "等待素材注入...",
+    watermark: "SAPIENTIA (智慧)"
   },
   {
     id: 'torch',
-    icon: 'fas fa-dungeon', // Using dungeon gate/torch metaphor
+    icon: 'fas fa-fire-alt', // Changed to fire-alt for more "torch" feel
     subIcon: '✨',
     color: 'text-amber-700',
     glowColor: 'gold',
     animation: 'animate-pulse',
-    title: "真理火炬已點燃",
-    subtitle: "照亮你的文案盲點..."
+    title: "真理火炬",
+    subtitle: "照亮你的文案盲點...",
+    watermark: "VERITAS (真理)"
   },
   {
-    id: 'cauldron',
-    icon: 'fas fa-flask', 
-    subIcon: '🫧',
-    color: 'text-emerald-800',
-    glowColor: 'green',
-    animation: 'animate-bounce-slow',
-    title: "煉金大釜沸騰中",
-    subtitle: "丟入素材，提煉爆款精華..."
+    id: 'offering',
+    icon: 'fas fa-hands', 
+    color: 'text-stone-600',
+    glowColor: 'white',
+    animation: 'animate-float',
+    title: "虔誠獻計",
+    subtitle: "雙手奉上，等待回應...",
+    watermark: "TABULA RASA"
   },
   {
     id: 'crystal',
-    icon: 'fas fa-globe-europe', // Looks like a crystal ball
+    icon: 'fas fa-eye', // Mystical eye / Orb
     subIcon: '🔮',
-    color: 'text-purple-800',
+    color: 'text-purple-900',
     glowColor: 'purple',
     animation: 'animate-pulse',
-    title: "全知水晶球",
-    subtitle: "讓未來的轉換率顯現..."
+    title: "全知之眼",
+    subtitle: "讓未來的轉換率顯現...",
+    watermark: "PROVIDENTIA (預見)"
   },
   {
     id: 'bonfire',
-    icon: 'fas fa-campground', 
-    subIcon: '🦴',
+    icon: 'fas fa-burn', 
+    subIcon: '🪵',
     color: 'text-red-900',
     glowColor: 'red',
     animation: 'animate-flicker',
     title: "獻祭營火",
-    subtitle: "只有燒盡平庸，才能重生..."
+    subtitle: "燒盡平庸，浴火重生...",
+    watermark: "SACRIFICIUM (獻祭)"
   }
 ];
 
@@ -100,12 +113,12 @@ const BUTTON_TEXTS = [
   "🔮 進行靈魂投影",
   "👹 請求總監賜教",
   "⚖️ 開啟真理之門",
-  "🌪️ 釋放混沌風暴"
+  "🌪️ 釋放混沌風暴",
+  "🦴 投入營火"
 ];
 
-// 比較嚴肅、氛圍感的浮水印 (拉丁文/英文概念)
-const WATERMARK_TEXTS = [
-  "VERITAS (真理)",
+// 額外的隨機浮水印 (與主題浮水印混合使用)
+const EXTRA_WATERMARKS = [
   "CREATIO (創造)",
   "AVARITIA (貪婪)",
   "EQUIVALENT EXCHANGE",
@@ -113,7 +126,6 @@ const WATERMARK_TEXTS = [
   "ALCHEMY (鍊金術)",
   "MAGNUM OPUS (傑作)",
   "TRANSFORMATION",
-  "SACRIFICE (獻祭)",
   "ABYSSUS (深淵)"
 ];
 
@@ -371,8 +383,9 @@ const App: React.FC = () => {
   // 隨機文案與視覺狀態
   const [loadingFlavor, setLoadingFlavor] = useState({ title: LOADING_TITLES[0], subtitle: LOADING_SUBTITLES[0] });
   const [idleTheme, setIdleTheme] = useState<VisualTheme>(IDLE_THEMES[0]);
+  const [currentBg, setCurrentBg] = useState(PARCHMENT_TONES[0]);
   const [buttonText, setButtonText] = useState(BUTTON_TEXTS[0]);
-  const [watermarkText, setWatermarkText] = useState(WATERMARK_TEXTS[0]);
+  const [watermarkText, setWatermarkText] = useState("");
 
   const [msgModal, setMsgModal] = useState<{
     isOpen: boolean;
@@ -388,9 +401,19 @@ const App: React.FC = () => {
   // 初始化與重置時，刷新隨機元素
   const refreshRandomElements = () => {
     // 隨機選擇一個主題
-    setIdleTheme(getRandomFlavor(IDLE_THEMES));
+    const theme = getRandomFlavor(IDLE_THEMES);
+    setIdleTheme(theme);
     setButtonText(getRandomFlavor(BUTTON_TEXTS));
-    setWatermarkText(getRandomFlavor(WATERMARK_TEXTS));
+    
+    // 羊皮紙背景隨機
+    setCurrentBg(getRandomFlavor(PARCHMENT_TONES));
+
+    // 浮水印：50% 機率用主題自帶的，50% 機率用額外列表的
+    if (Math.random() > 0.5) {
+        setWatermarkText(theme.watermark);
+    } else {
+        setWatermarkText(getRandomFlavor(EXTRA_WATERMARKS));
+    }
   };
 
   useEffect(() => {
@@ -660,7 +683,8 @@ const App: React.FC = () => {
 
         {/* Right Panel */}
         <div className="w-full lg:w-2/3 flex-none lg:flex-1 flex flex-col animate-fade-in-up lg:h-full shrink-0 min-h-[60vh] pb-8 lg:pb-0" style={{ animationDelay: '0.1s' }} id="result-area">
-          <div className="ghibli-panel p-1 flex-1 flex flex-col relative bg-[#fff] h-full overflow-hidden">
+          {/* Dynamic Background Color applied here */}
+          <div className={`ghibli-panel p-1 flex-1 flex flex-col relative ${currentBg} h-full overflow-hidden transition-colors duration-700`}>
             
             {/* 氛圍背景浮水印 (隨機拉丁文/神秘概念) */}
             {status === 'idle' && (
@@ -671,7 +695,7 @@ const App: React.FC = () => {
               </div>
             )}
             
-            <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-gray-200/50 to-transparent z-20 pointer-events-none"></div>
+            <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-black/5 to-transparent z-20 pointer-events-none"></div>
             <div className="flex-1 overflow-y-auto p-6 md:p-10 relative z-10 scroll-smooth">
               
               {status === 'idle' && (
