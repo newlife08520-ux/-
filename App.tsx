@@ -4,6 +4,71 @@ import { runAuditStream, testConnection } from './services/geminiService';
 import { UploadedFile, AuditStatus } from './types';
 import { DEFAULT_SYSTEM_PROMPT, TARGET_MODEL_ID, DEFAULT_LOGO_URL, HARDCODED_API_KEY, AVAILABLE_MODELS } from './constants';
 
+// --- 隨機文案庫 (Flavor Text) ---
+const LOADING_TITLES = [
+  "🔥 召喚地獄總監中...", 
+  "👹 總監正在磨刀...", 
+  "⚡ 正在以此素材獻祭...", 
+  "🌪️ 捲起爆款風暴...", 
+  "🔮 讀取商業靈魂...",
+  "👁️ 開啟商業鷹眼...",
+  "⚖️ 審判天秤傾斜中...",
+  "🩸 正在執行殘酷處刑...",
+  "🐉 燃燒經費的儀式..."
+];
+
+const LOADING_SUBTITLES = [
+  "正在注入高轉化率魔法...", 
+  "這文案太平淡了，正在加辣...", 
+  "千萬別眨眼，奇蹟即將發生...", 
+  "準備接受來自地獄的審判...", 
+  "正在萃取商業價值...",
+  "分析這支影片的爆款基因...",
+  "如果這是一坨屎，總監會告訴你...",
+  "正在把你的預算變成業績...",
+  "施展鍊金術：點石成金中..."
+];
+
+const IDLE_TITLES = [
+  "魔法書準備就緒",
+  "召喚陣繪製完成",
+  "祭壇已清理乾淨",
+  "等待獻祭素材",
+  "總監正在喝咖啡"
+];
+
+const IDLE_SUBTITLES = [
+  "等待素材注入...",
+  "請放上您的供品 (圖片/影片)",
+  "總監今天心情不錯，快點...",
+  "準備好接受爆擊了嗎？",
+  "別讓總監等太久..."
+];
+
+const BUTTON_TEXTS = [
+  "🔥 3秒生死判決",
+  "⚡ 召喚毒舌總監",
+  "🩸 開始殘酷審判",
+  "🔮 預測爆款機率",
+  "👹 獻祭素材換業績",
+  "🌪️ 讓暴風雨來得更猛烈",
+  "⚖️ 進行靈魂拷問"
+];
+
+const WATERMARK_TEXTS = [
+  "平庸 是最大的罪惡",
+  "你的廣告 夠暴力嗎？",
+  "Rich Bear 正在看著你",
+  "文案要有 錢 的味道",
+  "不做爆款 就做垃圾",
+  "點擊率 說明一切",
+  "沒有藉口 只有結果",
+  "用 美感 征服世界"
+];
+
+// 隨機選取工具
+const getRandomFlavor = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
+
 const MessageModal: React.FC<{
   isOpen: boolean;
   title: string;
@@ -16,7 +81,7 @@ const MessageModal: React.FC<{
   return (
     <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 animate-fade-in-up">
       <div className={`bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl border-4 ${type === 'error' ? 'border-red-400' : 'border-ghibli-wood'} text-center transform scale-100 transition-transform`}>
-        <div className="text-4xl mb-4">{icon}</div>
+        <div className="text-4xl mb-4 animate-bounce">{icon}</div>
         <h3 className="text-xl font-black text-ghibli-wood mb-2">{title}</h3>
         <p className="text-gray-600 mb-6 whitespace-pre-wrap">{message}</p>
         <button onClick={onClose} className="btn-magic px-6 py-2 w-full">知道了</button>
@@ -252,6 +317,12 @@ const App: React.FC = () => {
   const [connStatus, setConnStatus] = useState<'checking' | 'connected' | 'error' | 'none'>('none');
   const [connMsg, setConnMsg] = useState('');
 
+  // 隨機文案與視覺狀態
+  const [loadingFlavor, setLoadingFlavor] = useState({ title: LOADING_TITLES[0], subtitle: LOADING_SUBTITLES[0] });
+  const [idleFlavor, setIdleFlavor] = useState({ title: IDLE_TITLES[0], subtitle: IDLE_SUBTITLES[0] });
+  const [buttonText, setButtonText] = useState(BUTTON_TEXTS[0]);
+  const [watermarkText, setWatermarkText] = useState(WATERMARK_TEXTS[0]);
+
   const [msgModal, setMsgModal] = useState<{
     isOpen: boolean;
     title: string;
@@ -263,7 +334,19 @@ const App: React.FC = () => {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // 初始化與重置時，刷新隨機元素
+  const refreshRandomElements = () => {
+    setIdleFlavor({
+      title: getRandomFlavor(IDLE_TITLES),
+      subtitle: getRandomFlavor(IDLE_SUBTITLES)
+    });
+    setButtonText(getRandomFlavor(BUTTON_TEXTS));
+    setWatermarkText(getRandomFlavor(WATERMARK_TEXTS));
+  };
+
   useEffect(() => {
+    refreshRandomElements();
+
     const checkConn = async () => {
       if (!apiKey && !HARDCODED_API_KEY && !process.env.API_KEY) {
         setConnStatus('none');
@@ -301,7 +384,6 @@ const App: React.FC = () => {
     const selectedFile = e.target.files?.[0];
     if (!selectedFile) return;
 
-    // Upgraded limit to 200MB for video support
     if (selectedFile.size > 200 * 1024 * 1024) {
       setMsgModal({ isOpen: true, title: '檔案太重了', message: '請上傳小於 200MB 的檔案。', icon: '🍃', type: 'error' });
       return;
@@ -315,6 +397,11 @@ const App: React.FC = () => {
         data: base64Raw.split(',')[1],
         name: selectedFile.name
       });
+      // 上傳檔案時，也切換一次 Idle 文案，增加趣味性
+      setIdleFlavor({
+          title: "供品已確認",
+          subtitle: "看起來... 很有潛力 (或槽點)"
+      });
     };
     reader.readAsDataURL(selectedFile);
   };
@@ -322,6 +409,7 @@ const App: React.FC = () => {
   const clearFile = () => {
     setFile(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
+    refreshRandomElements();
   };
 
   const handleAudit = async () => {
@@ -334,6 +422,12 @@ const App: React.FC = () => {
       setMsgModal({ isOpen: true, title: '魔法書是空的', message: '請至少「上傳一個檔案」或「輸入一段咒語」。', icon: '📖', type: 'info' });
       return;
     }
+
+    // 隨機產生這次 Loading 的騷話
+    setLoadingFlavor({
+        title: getRandomFlavor(LOADING_TITLES),
+        subtitle: getRandomFlavor(LOADING_SUBTITLES)
+    });
 
     setStatus('loading');
     setResult('');
@@ -422,8 +516,8 @@ const App: React.FC = () => {
               />
               
               {!file ? (
-                <div className="absolute inset-0 bg-white border-2 border-dashed border-ghibli-wood/30 rounded-2xl flex flex-col items-center justify-center text-ghibli-wood group-hover:border-ghibli-accent group-hover:bg-orange-50/50 transition-all duration-300">
-                  <div className="w-12 h-12 md:w-16 md:h-16 bg-ghibli-bg rounded-full flex items-center justify-center mb-2 md:mb-3 shadow-sm">
+                <div className="absolute inset-0 bg-white border-2 border-dashed border-ghibli-wood/30 rounded-2xl flex flex-col items-center justify-center text-ghibli-wood group-hover:border-ghibli-accent group-hover:bg-orange-100 transition-all duration-300">
+                  <div className="w-12 h-12 md:w-16 md:h-16 bg-ghibli-bg rounded-full flex items-center justify-center mb-2 md:mb-3 shadow-sm group-hover:scale-110 transition-transform">
                     <i className="fas fa-cloud-upload-alt text-xl md:text-2xl text-ghibli-grass"></i>
                   </div>
                   <p className="font-bold text-base md:text-lg">點擊上傳素材</p>
@@ -465,17 +559,17 @@ const App: React.FC = () => {
             <button 
               onClick={handleAudit}
               disabled={status === 'loading' || status === 'streaming'}
-              className="mt-6 btn-magic w-full py-4 text-lg md:text-xl flex items-center justify-center gap-3 relative overflow-hidden group z-20 shrink-0"
+              className="mt-6 btn-magic w-full py-4 text-lg md:text-xl flex items-center justify-center gap-3 relative overflow-hidden group z-20 shrink-0 shadow-xl"
             >
               {status === 'loading' || status === 'streaming' ? (
                 <>
-                  <div className="magic-loader"></div>
-                  <span className="ml-3">總監正在看...</span>
+                  <div className="text-2xl animate-spin">🔥</div>
+                  <span className="ml-3 font-bold animate-pulse">召喚儀式進行中...</span>
                 </>
               ) : (
                 <>
-                  <i className="fas fa-bolt group-hover:animate-pulse"></i>
-                  <span>3秒生死判決</span>
+                  <i className="fas fa-bolt group-hover:animate-ping"></i>
+                  <span>{buttonText}</span>
                 </>
               )}
             </button>
@@ -484,25 +578,52 @@ const App: React.FC = () => {
 
         {/* Right Panel */}
         <div className="w-full lg:w-2/3 flex-none lg:flex-1 flex flex-col animate-fade-in-up lg:h-full shrink-0 min-h-[60vh] pb-8 lg:pb-0" style={{ animationDelay: '0.1s' }} id="result-area">
-          <div className="ghibli-panel p-1 flex-1 flex flex-col relative bg-[#fff] h-full">
+          <div className="ghibli-panel p-1 flex-1 flex flex-col relative bg-[#fff] h-full overflow-hidden">
+            
+            {/* 趣味背景浮水印 (只有在待機或非 Loading 狀態明顯一點) */}
+            {status === 'idle' && (
+              <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none select-none overflow-hidden z-0">
+                  <div className="transform -rotate-12 text-6xl md:text-8xl font-black text-ghibli-wood whitespace-nowrap animate-pulse">
+                    {watermarkText}
+                  </div>
+              </div>
+            )}
+            
             <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-gray-200/50 to-transparent z-20 pointer-events-none"></div>
             <div className="flex-1 overflow-y-auto p-6 md:p-10 relative z-10 scroll-smooth">
               
               {status === 'idle' && (
                  <div className="flex flex-col items-center justify-center h-full text-ghibli-wood/40 py-20 lg:py-0">
-                  <div className="w-32 h-32 md:w-40 md:h-40 bg-ghibli-bg rounded-full flex items-center justify-center mb-6 border-4 border-dashed border-ghibli-wood/20">
-                    <i className="fas fa-stopwatch text-5xl md:text-6xl text-ghibli-wood/30"></i>
+                  <div className="relative mb-6 group cursor-default">
+                    <div className="w-32 h-32 md:w-40 md:h-40 bg-ghibli-bg rounded-full flex items-center justify-center border-4 border-dashed border-ghibli-wood/20 animate-pulse group-hover:border-ghibli-accent/50 transition-colors">
+                        <i className="fas fa-book-sparkles text-5xl md:text-6xl text-ghibli-wood/30 group-hover:text-ghibli-accent/50 transition-colors"></i>
+                    </div>
+                     {file && <div className="absolute -top-2 -right-2 text-4xl animate-bounce drop-shadow-md">🔥</div>}
                   </div>
-                  <h3 className="text-xl md:text-2xl font-bold mb-3">等待挑戰者</h3>
-                  <p className="text-base md:text-lg">上傳影片/圖片，測試你的「滑動阻斷力」</p>
+                  
+                  <h3 className="text-xl md:text-2xl font-black mb-3 text-ghibli-wood">{idleFlavor.title}</h3>
+                  <p className="text-base md:text-lg font-medium">{idleFlavor.subtitle}</p>
                 </div>
               )}
 
               {status === 'loading' && (
-                <div className="flex flex-col items-center justify-center h-full space-y-6 animate-pulse py-20 lg:py-0">
-                  <div className="text-6xl text-ghibli-accent animate-spin-slow">⏳</div>
-                  <div className="text-center">
-                    <p className="text-ghibli-wood font-black text-xl mb-1">正在載入 Gemini 3 Pro...</p>
+                <div className="flex flex-col items-center justify-center h-full space-y-6 py-20 lg:py-0">
+                   <div className="relative">
+                      {/* 地獄總監圖示 */}
+                      <div className="text-7xl md:text-9xl animate-bounce z-10 relative drop-shadow-[0_10px_10px_rgba(220,38,38,0.5)]">👹</div>
+                      {/* 背後火焰特效 */}
+                      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-gradient-to-r from-orange-500 to-red-600 rounded-full blur-2xl animate-pulse opacity-60"></div>
+                      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-56 h-56 bg-red-500/20 rounded-full blur-3xl animate-ping"></div>
+                      
+                      <div className="absolute -bottom-6 left-0 right-0 flex justify-center gap-2 text-3xl">
+                         <span className="animate-bounce" style={{animationDelay: '0s'}}>🔥</span>
+                         <span className="animate-bounce" style={{animationDelay: '0.1s'}}>🔥</span>
+                         <span className="animate-bounce" style={{animationDelay: '0.2s'}}>🔥</span>
+                      </div>
+                   </div>
+                  <div className="text-center max-w-md mx-auto z-20">
+                    <p className="text-ghibli-wood font-black text-2xl md:text-3xl mb-3 animate-pulse drop-shadow-sm">{loadingFlavor.title}</p>
+                    <p className="text-ghibli-wood/70 font-bold text-lg">{loadingFlavor.subtitle}</p>
                   </div>
                 </div>
               )}
@@ -516,7 +637,7 @@ const App: React.FC = () => {
                     <i className="fas fa-bomb text-5xl mb-4 text-red-500"></i>
                     <h3 className="font-black text-xl mb-2">召喚失敗</h3>
                     <p className="mb-4 font-bold text-lg">請檢查 API Key 或網路狀態</p>
-                    <button onClick={() => setStatus('idle')} className="mt-4 px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-bold">重置</button>
+                    <button onClick={() => setStatus('idle')} className="mt-4 px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-bold shadow-lg">重置儀式</button>
                 </div>
               )}
 
@@ -552,4 +673,3 @@ const App: React.FC = () => {
 };
 
 export default App;
-
