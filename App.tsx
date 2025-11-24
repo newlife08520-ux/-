@@ -84,7 +84,7 @@ const AdminModal: React.FC<{
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl p-8 w-full max-w-2xl shadow-2xl border-4 border-ghibli-wood relative animate-fade-in-up max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-3xl p-6 md:p-8 w-full max-w-2xl shadow-2xl border-4 border-ghibli-wood relative animate-fade-in-up max-h-[90vh] overflow-y-auto">
         <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-red-500"><i className="fas fa-times text-xl"></i></button>
         
         {step === 1 ? (
@@ -111,7 +111,7 @@ const AdminModal: React.FC<{
                   <label className="block text-sm font-bold text-ghibli-wood mb-2">
                     <i className="fas fa-key mr-1"></i> Gemini API Key (金鑰)
                   </label>
-                  <div className="flex gap-2">
+                  <div className="flex flex-col md:flex-row gap-2">
                     <input 
                       type="password" 
                       value={localApiKey}
@@ -122,9 +122,9 @@ const AdminModal: React.FC<{
                     <button 
                       onClick={handleTestConnection} 
                       disabled={testStatus === 'testing'}
-                      className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${testStatus === 'testing' ? 'bg-gray-300 text-gray-500' : 'bg-white border border-ghibli-wood text-ghibli-wood hover:bg-orange-100'}`}
+                      className={`px-4 py-3 md:py-2 rounded-lg font-bold text-sm transition-colors ${testStatus === 'testing' ? 'bg-gray-300 text-gray-500' : 'bg-white border border-ghibli-wood text-ghibli-wood hover:bg-orange-100'}`}
                     >
-                      {testStatus === 'testing' ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-plug"></i>} 驗證連線
+                      {testStatus === 'testing' ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-plug"></i>} <span className="md:hidden lg:inline">驗證連線</span>
                     </button>
                   </div>
                   <p className="text-xs mt-2 font-mono">
@@ -378,6 +378,14 @@ const App: React.FC = () => {
     }
 
     setStatus('loading');
+    
+    // Mobile UX: Scroll to result area automatically
+    if (window.innerWidth < 1024) {
+      setTimeout(() => {
+        document.getElementById('result-area')?.scrollIntoView({ behavior: 'smooth' });
+      }, 500);
+    }
+
     try {
       const response = await runAudit(inputText, file, systemPrompt, currentModelId, apiKey);
       setResult(response);
@@ -397,27 +405,27 @@ const App: React.FC = () => {
   return (
     <div className="flex flex-col h-screen overflow-hidden">
       {/* Header */}
-      <header className="h-28 px-8 flex items-center justify-between z-10 shrink-0 bg-transparent">
-        <div className="flex items-center gap-6">
-          {/* Redesigned Logo Container with Glow */}
+      <header className="h-auto min-h-[80px] md:h-28 px-4 md:px-8 py-4 md:py-0 flex flex-wrap md:flex-nowrap items-center justify-between z-10 shrink-0 bg-transparent gap-4">
+        <div className="flex items-center gap-4 md:gap-6">
+          {/* Logo Container */}
           <div className="group relative">
              <div className="absolute -inset-2 bg-ghibli-accent/20 rounded-full blur-md group-hover:blur-lg transition-all duration-500"></div>
-             <div className="w-20 h-20 bg-white rounded-3xl border-[3px] border-ghibli-wood flex items-center justify-center overflow-hidden shadow-[4px_4px_0px_rgba(93,64,55,1)] transform group-hover:-translate-y-1 group-hover:shadow-[6px_6px_0px_rgba(93,64,55,1)] transition-all duration-300 relative z-10">
+             <div className="w-14 h-14 md:w-20 md:h-20 bg-white rounded-2xl md:rounded-3xl border-[3px] border-ghibli-wood flex items-center justify-center overflow-hidden shadow-[3px_3px_0px_rgba(93,64,55,1)] md:shadow-[4px_4px_0px_rgba(93,64,55,1)] transform group-hover:-translate-y-1 transition-all duration-300 relative z-10">
                 {logoUrl ? (
-                  <img src={logoUrl} alt="Logo" className="w-14 h-14 object-contain" />
+                  <img src={logoUrl} alt="Logo" className="w-10 h-10 md:w-14 md:h-14 object-contain" />
                 ) : (
-                  <i className="fas fa-bear text-3xl text-ghibli-wood"></i>
+                  <i className="fas fa-bear text-2xl md:text-3xl text-ghibli-wood"></i>
                 )}
              </div>
           </div>
           
           <div className="flex flex-col justify-center">
-            <h1 className="text-4xl font-black text-ghibli-wood tracking-wide drop-shadow-sm leading-tight">Rich Bear</h1>
-            <div className="flex items-center gap-3 text-ghibli-wood/80 font-bold mt-1">
-               <span className="text-lg">審核之森</span>
+            <h1 className="text-2xl md:text-4xl font-black text-ghibli-wood tracking-wide drop-shadow-sm leading-tight">Rich Bear</h1>
+            <div className="flex items-center gap-2 md:gap-3 text-ghibli-wood/80 font-bold mt-1">
+               <span className="text-sm md:text-lg">審核之森</span>
                <div className="h-1 w-1 rounded-full bg-ghibli-wood/40"></div>
                <span 
-                className="bg-white/60 px-3 py-0.5 rounded-full border border-ghibli-wood/20 text-xs text-ghibli-wood/60 cursor-pointer hover:bg-white hover:text-ghibli-accent transition-colors flex items-center gap-1"
+                className="bg-white/60 px-2 md:px-3 py-0.5 rounded-full border border-ghibli-wood/20 text-xs text-ghibli-wood/60 cursor-pointer hover:bg-white hover:text-ghibli-accent transition-colors flex items-center gap-1"
                 onClick={() => setAdminOpen(true)}
               >
                 <i className="fas fa-server"></i> {currentModelId}
@@ -426,28 +434,28 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        {/* Traffic Light Status Indicator */}
+        {/* Traffic Light Status Indicator - Responsive */}
         <div 
           onClick={() => setAdminOpen(true)}
-          className={`hidden md:flex items-center gap-3 px-5 py-3 bg-white/90 backdrop-blur rounded-2xl border-2 cursor-pointer transition-all hover:scale-105 shadow-md ${
+          className={`flex items-center gap-2 md:gap-3 px-3 md:px-5 py-2 md:py-3 bg-white/90 backdrop-blur rounded-xl md:rounded-2xl border-2 cursor-pointer transition-all hover:scale-105 shadow-md ml-auto md:ml-0 ${
             connStatus === 'connected' ? 'border-green-200 text-green-800' :
             connStatus === 'error' ? 'border-red-200 text-red-800' :
             'border-gray-200 text-gray-600'
           }`}
         >
-             <div className="relative flex h-4 w-4">
+             <div className="relative flex h-3 w-3 md:h-4 md:w-4 shrink-0">
                 {connStatus === 'checking' && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>}
                 {connStatus === 'connected' && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>}
                 {connStatus === 'error' && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>}
                 
-                <span className={`relative inline-flex rounded-full h-4 w-4 ${
+                <span className={`relative inline-flex rounded-full h-full w-full ${
                     connStatus === 'connected' ? 'bg-green-500' :
                     connStatus === 'error' ? 'bg-red-500' :
                     connStatus === 'checking' ? 'bg-yellow-500' : 'bg-gray-300'
                 }`}></span>
              </div>
              
-             <div className="flex flex-col">
+             <div className="flex flex-col hidden md:flex">
                 <span className="text-xs font-bold uppercase tracking-wider opacity-70">
                     {currentModelId === TARGET_MODEL_ID ? 'Gemini 3 Pro' : 'AI Model'}
                 </span>
@@ -457,22 +465,30 @@ const App: React.FC = () => {
                      connStatus === 'checking' ? '檢查中...' : '尚未設定'}
                 </span>
              </div>
+             {/* Mobile Text */}
+             <span className="md:hidden text-xs font-black">
+                {connStatus === 'connected' ? '正常' : connStatus === 'error' ? '失敗' : '未連線'}
+             </span>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="flex-1 flex gap-8 p-8 pt-4 z-10 overflow-hidden relative">
+      {/* Main Content - Responsive Layout */}
+      {/* 
+         Mobile: flex-col, overflow-y-auto (scrolls entire body content)
+         Desktop (lg): flex-row, overflow-hidden (panels scroll independently)
+      */}
+      <main className="flex-1 flex flex-col lg:flex-row gap-4 lg:gap-8 p-4 lg:p-8 pt-0 z-10 overflow-y-auto lg:overflow-hidden relative scroll-smooth">
         
         {/* Left Panel: Input */}
-        <div className="w-full md:w-1/3 flex flex-col h-full animate-fade-in-up">
-          <div className="ghibli-panel p-8 flex-1 flex flex-col z-20">
-            <h2 className="text-2xl font-black text-ghibli-wood mb-2 flex items-center gap-3">
+        <div className="w-full lg:w-1/3 flex-none lg:flex-1 flex flex-col animate-fade-in-up lg:h-full shrink-0">
+          <div className="ghibli-panel p-6 md:p-8 flex-1 flex flex-col z-20 h-full min-h-[400px]">
+            <h2 className="text-xl md:text-2xl font-black text-ghibli-wood mb-2 flex items-center gap-3">
               <i className="fas fa-envelope-open-text text-ghibli-accent"></i> 投遞素材
             </h2>
-            <p className="text-sm text-gray-500 mb-6 font-medium">請將您的銷售頁 (PDF/圖片) 放入信箱。</p>
+            <p className="text-xs md:text-sm text-gray-500 mb-4 md:mb-6 font-medium">請將您的銷售頁 (PDF/圖片) 放入信箱。</p>
 
             {/* File Drop Zone */}
-            <div className="relative group h-48 mb-6 cursor-pointer">
+            <div className="relative group h-40 md:h-48 mb-6 cursor-pointer shrink-0">
               <input 
                 type="file" 
                 ref={fileInputRef}
@@ -483,10 +499,10 @@ const App: React.FC = () => {
               
               {!file ? (
                 <div className="absolute inset-0 bg-white border-2 border-dashed border-ghibli-wood/30 rounded-2xl flex flex-col items-center justify-center text-ghibli-wood group-hover:border-ghibli-accent group-hover:bg-orange-50/50 transition-all duration-300">
-                  <div className="w-16 h-16 bg-ghibli-bg rounded-full flex items-center justify-center mb-3 shadow-sm">
-                    <i className="fas fa-leaf text-2xl text-ghibli-grass"></i>
+                  <div className="w-12 h-12 md:w-16 md:h-16 bg-ghibli-bg rounded-full flex items-center justify-center mb-2 md:mb-3 shadow-sm">
+                    <i className="fas fa-leaf text-xl md:text-2xl text-ghibli-grass"></i>
                   </div>
-                  <p className="font-bold text-lg">拖曳檔案至此</p>
+                  <p className="font-bold text-base md:text-lg">拖曳檔案至此</p>
                   <p className="text-xs text-gray-400 mt-1">支援 圖片 (JPG/PNG) 或 PDF</p>
                 </div>
               ) : (
@@ -510,7 +526,7 @@ const App: React.FC = () => {
             </div>
 
             {/* Text Input */}
-            <div className="flex-1 flex flex-col relative z-20">
+            <div className="flex-1 flex flex-col relative z-20 min-h-[120px]">
               <label className="block text-sm font-black text-ghibli-wood mb-2 ml-1">
                 <i className="fas fa-feather-alt mr-2 text-ghibli-accent"></i>補充咒語 (文案/備註)
               </label>
@@ -525,7 +541,7 @@ const App: React.FC = () => {
             <button 
               onClick={handleAudit}
               disabled={status === 'loading'}
-              className="mt-6 btn-magic w-full py-4 text-xl flex items-center justify-center gap-3 relative overflow-hidden group z-20"
+              className="mt-6 btn-magic w-full py-4 text-lg md:text-xl flex items-center justify-center gap-3 relative overflow-hidden group z-20 shrink-0"
             >
               {status === 'loading' ? (
                 <>
@@ -544,23 +560,23 @@ const App: React.FC = () => {
         </div>
 
         {/* Right Panel: Output */}
-        <div className="w-full md:w-2/3 flex flex-col h-full animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
-          <div className="ghibli-panel p-1 flex-1 flex flex-col relative bg-[#fff]">
+        <div className="w-full lg:w-2/3 flex-none lg:flex-1 flex flex-col animate-fade-in-up lg:h-full shrink-0 min-h-[60vh] pb-8 lg:pb-0" style={{ animationDelay: '0.1s' }} id="result-area">
+          <div className="ghibli-panel p-1 flex-1 flex flex-col relative bg-[#fff] h-full">
             <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-gray-200/50 to-transparent z-20 pointer-events-none"></div>
-            <div className="flex-1 overflow-y-auto p-10 relative z-10 scroll-smooth" id="result-area">
+            <div className="flex-1 overflow-y-auto p-6 md:p-10 relative z-10 scroll-smooth">
               
               {status === 'idle' && (
-                 <div className="flex flex-col items-center justify-center h-full text-ghibli-wood/40">
-                  <div className="w-40 h-40 bg-ghibli-bg rounded-full flex items-center justify-center mb-6 border-4 border-dashed border-ghibli-wood/20">
-                    <i className="fas fa-book-reader text-6xl text-ghibli-wood/30"></i>
+                 <div className="flex flex-col items-center justify-center h-full text-ghibli-wood/40 py-20 lg:py-0">
+                  <div className="w-32 h-32 md:w-40 md:h-40 bg-ghibli-bg rounded-full flex items-center justify-center mb-6 border-4 border-dashed border-ghibli-wood/20">
+                    <i className="fas fa-book-reader text-5xl md:text-6xl text-ghibli-wood/30"></i>
                   </div>
-                  <h3 className="text-2xl font-bold mb-3">魔法書準備就緒</h3>
-                  <p className="text-lg">等待素材注入...</p>
+                  <h3 className="text-xl md:text-2xl font-bold mb-3">魔法書準備就緒</h3>
+                  <p className="text-base md:text-lg">等待素材注入...</p>
                 </div>
               )}
 
               {status === 'loading' && (
-                <div className="flex flex-col items-center justify-center h-full space-y-6 animate-pulse">
+                <div className="flex flex-col items-center justify-center h-full space-y-6 animate-pulse py-20 lg:py-0">
                   <div className="text-6xl text-ghibli-accent animate-bounce">🔥</div>
                   <div className="text-center">
                     <p className="text-ghibli-wood font-black text-xl mb-1">正在燃燒經費召喚總監...</p>
@@ -574,7 +590,7 @@ const App: React.FC = () => {
               )}
               
               {status === 'error' && (
-                 <div className="p-6 border-4 border-red-200 rounded-3xl bg-red-50 text-red-800 text-center animate-fade-in-up">
+                 <div className="p-6 border-4 border-red-200 rounded-3xl bg-red-50 text-red-800 text-center animate-fade-in-up mt-10 lg:mt-0">
                     <i className="fas fa-bomb text-5xl mb-4 text-red-500"></i>
                     <h3 className="font-black text-xl mb-2">召喚失敗</h3>
                     <p className="mb-4 font-bold text-lg">系統遭遇不可抗力之錯誤</p>
