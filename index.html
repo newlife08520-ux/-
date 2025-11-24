@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rich Bear 審核之森 | V17 React Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <script type="importmap">
+    {
+      "imports": {
+        "react/": "https://aistudiocdn.com/react@^19.2.0/",
+        "react": "https://aistudiocdn.com/react@^19.2.0",
+        "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
+        "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/"
+      }
+    }
+    </script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              ghibli: {
+                bg: '#Fdfbf7',       
+                wood: '#5D4037',     
+                accent: '#D87C56',   
+                grass: '#8FBC8F',    
+                gold: '#D4AF37',     
+                panel: '#FFFef0',    
+                shadow: '#8d6e63'    
+              }
+            },
+            fontFamily: {
+              sans: ['Zen Maru Gothic', 'sans-serif'],
+            },
+            animation: {
+              'fade-in-up': 'fadeInUp 0.5s ease-out forwards',
+              'spin-slow': 'spin 3s linear infinite',
+            },
+            keyframes: {
+              fadeInUp: {
+                '0%': { opacity: '0', transform: 'translateY(20px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' },
+              }
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+        body {
+            background-color: #Fdfbf7;
+            background-image: radial-gradient(#E8E6E1 1px, transparent 1px), linear-gradient(135deg, #Fdfbf7 0%, #F5F1E6 100%);
+            background-size: 20px 20px, 100% 100%;
+            min-height: 100vh;
+            color: #5D4037;
+            font-family: 'Zen Maru Gothic', sans-serif;
+            overflow: hidden; /* Prevent body scroll, handle in containers */
+        }
+
+        .ghibli-panel {
+            background-color: #FFFef0;
+            border: 3px solid #5D4037;
+            border-radius: 24px;
+            box-shadow: 10px 10px 0px rgba(93, 64, 55, 0.15), inset 0 0 60px rgba(216, 124, 86, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ghibli-panel::before {
+            content: '';
+            position: absolute;
+            top: 10px; left: 10px; right: 10px; bottom: 10px;
+            border: 2px dashed #D8C3A5;
+            border-radius: 18px;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .btn-magic {
+            background: linear-gradient(135deg, #D87C56 0%, #BF5E3B 100%);
+            color: white;
+            border: 2px solid #5D4037;
+            border-radius: 16px;
+            transition: all 0.2s;
+            box-shadow: 0 4px 0 #5D4037;
+            font-weight: 900;
+        }
+        .btn-magic:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 0 #5D4037; filter: brightness(1.1); }
+        .btn-magic:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 0 0 #5D4037; }
+        .btn-magic:disabled { background: #A1887F; border-color: #5D4037; cursor: not-allowed; transform: translateY(4px); box-shadow: none; opacity: 0.8; }
+
+        .input-ghibli {
+            background: #fff;
+            border: 2px solid #D8C3A5;
+            border-radius: 12px;
+            color: #5D4037;
+            transition: all 0.3s;
+        }
+        .input-ghibli:focus { outline: none; border-color: #D87C56; box-shadow: 0 0 0 4px rgba(216, 124, 86, 0.1); }
+
+        .magic-card {
+            background: white;
+            border-left: 6px solid #D87C56;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 12px rgba(93, 64, 55, 0.08);
+            position: relative;
+            animation: cardSlideIn 0.5s ease-out forwards;
+        }
+        @keyframes cardSlideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .magic-card h2 {
+            font-size: 1.4rem; color: #D87C56; margin-bottom: 1rem; font-weight: 900;
+            border-bottom: 2px dashed #F5F1E6; padding-bottom: 0.5rem;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .magic-card strong { color: #BF5E3B; background: #FFF3E0; padding: 2px 6px; border-radius: 4px; }
+        .magic-card ul { list-style: none; padding-left: 0; }
+        .magic-card li { margin-bottom: 8px; padding-left: 24px; position: relative; }
+        .magic-card li::before { content: '🌰'; position: absolute; left: 0; top: 2px; font-size: 14px; }
+        .magic-card p { margin-bottom: 1rem; line-height: 1.6; }
+
+        .soot-sprite {
+            width: 40px; height: 40px; background: #333; border-radius: 50%;
+            position: fixed; bottom: 20px; left: 20px; cursor: pointer;
+            z-index: 50; display: flex; align-items: center; justify-content: center; color: white;
+            transition: transform 0.2s;
+        }
+        .soot-sprite:hover { transform: scale(1.1); }
+        .soot-sprite::before, .soot-sprite::after {
+            content: ''; position: absolute; background: white; width: 10px; height: 10px; border-radius: 50%; top: 10px;
+        }
+        .soot-sprite::before { left: 8px; } .soot-sprite::after { right: 8px; }
+
+        .magic-loader {
+            display: inline-block; width: 24px; height: 24px; border: 3px solid #FFF;
+            border-radius: 50%; border-top-color: transparent; animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(93, 64, 55, 0.05); }
+        ::-webkit-scrollbar-thumb { background: rgba(93, 64, 55, 0.2); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(93, 64, 55, 0.4); }
+    </style>
+  <link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>

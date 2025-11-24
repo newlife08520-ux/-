@@ -1,0 +1,5 @@
+{
+  "name": "Gemini 3 Pro Connectivity Tester",
+  "description": "A diagnostic tool to test API connectivity with Google Gemini models, specifically demonstrating the correct usage of 'gemini-3-pro-preview'.",
+  "requestFramePermissions": []
+}
