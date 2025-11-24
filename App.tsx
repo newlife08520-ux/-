@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { runAuditStream, testConnection } from './services/geminiService';
 import { UploadedFile, AuditStatus } from './types';
@@ -191,12 +192,10 @@ const AdminModal: React.FC<{
 };
 
 const MagicCardsDisplay: React.FC<{ markdown: string }> = ({ markdown }) => {
-  // Simple check to render something even if markdown is incomplete during streaming
   if (!markdown) return null;
 
   const sections = markdown.split(/(?=^## )/gm).filter(s => s.trim().length > 0);
 
-  // Fallback if structure isn't fully formed yet
   if (sections.length === 0 && markdown.length > 0) {
       return (
         <div className="magic-card animate-pulse">
@@ -339,13 +338,11 @@ const App: React.FC = () => {
     setStatus('loading');
     setResult('');
     
-    // Auto scroll to result area on mobile
     if (window.innerWidth < 1024) {
       setTimeout(() => { document.getElementById('result-area')?.scrollIntoView({ behavior: 'smooth' }); }, 300);
     }
 
     try {
-      // Use Streaming implementation
       setStatus('streaming');
       const stream = runAuditStream(inputText, file, systemPrompt, currentModelId, apiKey);
       
@@ -555,3 +552,4 @@ const App: React.FC = () => {
 };
 
 export default App;
+
