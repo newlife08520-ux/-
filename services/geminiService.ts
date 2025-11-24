@@ -107,6 +107,12 @@ export const runAuditStream = async function* (
 
 const handleError = (error: any, modelId: string) => {
     console.error("Gemini API Error:", error);
+    
+    // 處理 429 Resource Exhausted
+    if (error.message?.includes("429") || error.message?.includes("RESOURCE_EXHAUSTED") || error.message?.includes("quota")) {
+      throw new Error(`額度耗盡 (Quota Exceeded)。\n您的 API Key 免費額度已達上限，或付費額度已用完。\n請稍後再試，或檢查 Google AI Studio 的配額限制。`);
+    }
+
     if (error.message?.includes("404") || error.message?.includes("not found")) {
       throw new Error(`找不到模型 '${modelId}'。\n請確認您的 API Key 是否有權限存取 Gemini 3 Pro Preview。\n(若使用免費 Key，通常無權限)`);
     }
@@ -134,7 +140,8 @@ export const testConnection = async (modelId: string, apiKey?: string): Promise<
     console.error("Test Connection Error:", error);
     let errMsg = error.message || "Unknown error";
 
-    if (errMsg.includes("404")) errMsg = "模型未授權 (404)";
+    if (errMsg.includes("429") || errMsg.includes("RESOURCE_EXHAUSTED")) errMsg = "額度耗盡 (429 Quota Exceeded)";
+    else if (errMsg.includes("404")) errMsg = "模型未授權 (404)";
     else if (errMsg.includes("400")) errMsg = "Key 格式無效 (400)";
     else if (errMsg.includes("403")) errMsg = "存取被拒 (403)";
 
