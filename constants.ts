@@ -171,7 +171,7 @@ export const AVAILABLE_MODELS = [
   }
 ];
 
-export const ADMIN_PASSWORD_HASH = '8888';
+export const ADMIN_PASSWORD_HASH = '820820';
 // 預設模型 (可在後台切換)
 export const TARGET_MODEL_ID = 'gemini-3-pro-preview';
 export const DEFAULT_LOGO_URL = 'https://imgpx.com/en/3pC470UKfy5K.jpg';
