@@ -488,11 +488,6 @@ const App: React.FC = () => {
     refreshRandomElements();
   };
 
-  const handleAudit = async () => {
-    if (connStatus === 'error') {
-       setMsgModal({ isOpen: true, title: '連線中斷', message: `API 連線失敗，請檢查契約(Key)。\n原因：${connMsg}`, icon: '🚫', type: 'error' });
-       return;
-    }
 
     if (!file && !inputText.trim()) {
       setMsgModal({ isOpen: true, title: '祭壇空無一物', message: '請至少「上傳一個檔案」或「輸入一段咒語」。', icon: '📖', type: 'info' });
